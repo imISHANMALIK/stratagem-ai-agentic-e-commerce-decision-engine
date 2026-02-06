@@ -22,17 +22,32 @@ export interface SalesData {
   revenue: number;
   projected: number;
 }
+export interface InventoryItem {
+  sku: string;
+  name: string;
+  category: string;
+  stock: number;
+  velocity: number; // daily sales
+  daysOfSupply: number;
+  status: 'Healthy' | 'Low' | 'Critical';
+}
 interface StratagemState {
   metrics: Metric[];
   decisions: Decision[];
   salesHistory: SalesData[];
+  inventory: InventoryItem[];
   riskTolerance: number;
   growthWeight: number;
   adSpendCap: number;
+  analystContext: {
+    activeSku?: string;
+    activeCategory?: string;
+  } | null;
   // Actions
   setRiskTolerance: (val: number) => void;
   setGrowthWeight: (val: number) => void;
   setAdSpendCap: (val: number) => void;
+  setAnalystContext: (ctx: { activeSku?: string; activeCategory?: string } | null) => void;
   handleDecision: (id: string, status: 'accepted' | 'rejected') => void;
   generateInitialData: () => void;
 }
@@ -40,12 +55,15 @@ export const useStratagemStore = create<StratagemState>((set) => ({
   metrics: [],
   decisions: [],
   salesHistory: [],
+  inventory: [],
   riskTolerance: 40,
   growthWeight: 60,
   adSpendCap: 5000,
+  analystContext: null,
   setRiskTolerance: (riskTolerance) => set({ riskTolerance }),
   setGrowthWeight: (growthWeight) => set({ growthWeight }),
   setAdSpendCap: (adSpendCap) => set({ adSpendCap }),
+  setAnalystContext: (analystContext) => set({ analystContext }),
   handleDecision: (id, status) => set((state) => ({
     decisions: state.decisions.map(d => d.id === id ? { ...d, status } : d)
   })),
@@ -96,6 +114,24 @@ export const useStratagemStore = create<StratagemState>((set) => ({
         projected: base + (Math.random() * 1000)
       };
     });
-    set({ metrics, decisions, salesHistory });
+    const categories = ['Furniture', 'Electronics', 'Home Decor', 'Kitchen'];
+    const inventory: InventoryItem[] = Array.from({ length: 24 }).map((_, i) => {
+      const velocity = Math.floor(Math.random() * 20) + 1;
+      const stock = Math.floor(Math.random() * 200);
+      const dos = Math.floor(stock / velocity);
+      let status: 'Healthy' | 'Low' | 'Critical' = 'Healthy';
+      if (dos < 7) status = 'Critical';
+      else if (dos < 15) status = 'Low';
+      return {
+        sku: `SKU-${1000 + i}`,
+        name: `${categories[i % categories.length]} Item ${i + 1}`,
+        category: categories[i % categories.length],
+        stock,
+        velocity,
+        daysOfSupply: dos,
+        status
+      };
+    });
+    set({ metrics, decisions, salesHistory, inventory });
   }
 }));
