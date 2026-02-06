@@ -27,7 +27,7 @@ export interface InventoryItem {
   name: string;
   category: string;
   stock: number;
-  velocity: number; // daily sales
+  velocity: number;
   daysOfSupply: number;
   status: 'Healthy' | 'Low' | 'Critical';
 }
@@ -39,19 +39,20 @@ interface StratagemState {
   riskTolerance: number;
   growthWeight: number;
   adSpendCap: number;
+  isSimulating: boolean;
   analystContext: {
     activeSku?: string;
     activeCategory?: string;
   } | null;
-  // Actions
   setRiskTolerance: (val: number) => void;
   setGrowthWeight: (val: number) => void;
   setAdSpendCap: (val: number) => void;
   setAnalystContext: (ctx: { activeSku?: string; activeCategory?: string } | null) => void;
   handleDecision: (id: string, status: 'accepted' | 'rejected') => void;
+  runSimulation: () => void;
   generateInitialData: () => void;
 }
-export const useStratagemStore = create<StratagemState>((set) => ({
+export const useStratagemStore = create<StratagemState>((set, get) => ({
   metrics: [],
   decisions: [],
   salesHistory: [],
@@ -59,6 +60,7 @@ export const useStratagemStore = create<StratagemState>((set) => ({
   riskTolerance: 40,
   growthWeight: 60,
   adSpendCap: 5000,
+  isSimulating: false,
   analystContext: null,
   setRiskTolerance: (riskTolerance) => set({ riskTolerance }),
   setGrowthWeight: (growthWeight) => set({ growthWeight }),
@@ -67,6 +69,45 @@ export const useStratagemStore = create<StratagemState>((set) => ({
   handleDecision: (id, status) => set((state) => ({
     decisions: state.decisions.map(d => d.id === id ? { ...d, status } : d)
   })),
+  runSimulation: () => {
+    set({ isSimulating: true });
+    // Simulate engine processing delay
+    setTimeout(() => {
+      const state = get();
+      const riskFactor = state.riskTolerance / 100;
+      const growthFactor = state.growthWeight / 100;
+      // Re-calculate projections based on factors
+      const newSalesHistory = state.salesHistory.map(s => {
+        const growthBoost = 1 + (growthFactor * 0.2);
+        return {
+          ...s,
+          projected: s.revenue > 0 ? s.revenue * growthBoost : s.projected * growthBoost
+        };
+      });
+      // Update inventory health based on risk/growth
+      const newInventory = state.inventory.map(item => {
+        let status = item.status;
+        // High growth + Low risk tolerance = Higher chance of critical stockouts
+        const riskScore = (growthFactor * 0.7) + ((1 - riskFactor) * 0.3);
+        if (riskScore > 0.8 && Math.random() > 0.5) status = 'Critical';
+        else if (riskScore > 0.5 && Math.random() > 0.5) status = 'Low';
+        else if (Math.random() > 0.8) status = 'Healthy';
+        return { ...item, status };
+      });
+      // Update KPI metrics
+      const newMetrics = state.metrics.map(m => {
+        if (m.label === 'Revenue') return { ...m, value: m.value * (1 + growthFactor * 0.05) };
+        if (m.label === 'Inventory Health') return { ...m, value: Math.max(40, 95 - (growthFactor * 20)) };
+        return m;
+      });
+      set({
+        salesHistory: newSalesHistory,
+        inventory: newInventory,
+        metrics: newMetrics,
+        isSimulating: false
+      });
+    }, 1200);
+  },
   generateInitialData: () => {
     const metrics: Metric[] = [
       { id: '1', label: 'Revenue', value: 124500, trend: 12.5, unit: 'currency' },
@@ -77,7 +118,7 @@ export const useStratagemStore = create<StratagemState>((set) => ({
     const decisions: Decision[] = [
       {
         id: 'd1',
-        title: 'Pause Ads for SKU-X402',
+        title: 'Pause Ads for SKU-1002',
         description: 'Inventory levels dropping below safety threshold (3 days remaining).',
         impact: 'High',
         confidence: 94,
@@ -134,4 +175,4 @@ export const useStratagemStore = create<StratagemState>((set) => ({
     });
     set({ metrics, decisions, salesHistory, inventory });
   }
-}));
+})));
