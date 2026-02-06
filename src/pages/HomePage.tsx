@@ -1,138 +1,83 @@
-// Home page of the app.
-// Currently a demo placeholder "please wait" screen.
-// Replace this file with your actual app UI. Do not delete it to use some other file as homepage. Simply replace the entire contents of this file.
-
-import { useEffect, useMemo, useState } from 'react'
-import { Sparkles } from 'lucide-react'
-
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { HAS_TEMPLATE_DEMO, TemplateDemo } from '@/components/TemplateDemo'
-import { Button } from '@/components/ui/button'
-import { Toaster, toast } from '@/components/ui/sonner'
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
+import React, { useEffect } from 'react';
+import { useStratagemStore } from '@/store/stratagemStore';
+import { MetricCard } from '@/components/dashboard/MetricCard';
+import { DecisionFeed } from '@/components/dashboard/DecisionFeed';
+import { SalesChart } from '@/components/dashboard/SalesChart';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Activity, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 export function HomePage() {
-  const [coins, setCoins] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-  const [startedAt, setStartedAt] = useState<number | null>(null)
-  const [elapsedMs, setElapsedMs] = useState(0)
-
+  const generateInitialData = useStratagemStore(s => s.generateInitialData);
+  const metrics = useStratagemStore(s => s.metrics);
   useEffect(() => {
-    if (!isRunning || startedAt === null) return
-
-    const t = setInterval(() => {
-      setElapsedMs(Date.now() - startedAt)
-    }, 250)
-
-    return () => clearInterval(t)
-  }, [isRunning, startedAt])
-
-  const formatted = useMemo(() => formatDuration(elapsedMs), [elapsedMs])
-
-  const onPleaseWait = () => {
-    setCoins((c) => c + 1)
-
-    if (!isRunning) {
-      // Resume from the current elapsed time
-      setStartedAt(Date.now() - elapsedMs)
-      setIsRunning(true)
-      toast.success('Building your app…', {
-        description: "Hang tight — we're setting everything up.",
-      })
-      return
-    }
-
-    setIsRunning(false)
-    toast.info('Still working…', {
-      description: 'You can come back in a moment.',
-    })
-  }
-
-  const onReset = () => {
-    setCoins(0)
-    setIsRunning(false)
-    setStartedAt(null)
-    setElapsedMs(0)
-    toast('Reset complete')
-  }
-
-  const onAddCoin = () => {
-    setCoins((c) => c + 1)
-    toast('Coin added')
-  }
-
+    generateInitialData();
+  }, [generateInitialData]);
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 overflow-hidden relative">
-      <ThemeToggle />
-      <div className="absolute inset-0 bg-gradient-rainbow opacity-10 dark:opacity-20 pointer-events-none" />
-
-      <div className="text-center space-y-8 relative z-10 animate-fade-in w-full">
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-primary floating">
-            <Sparkles className="w-8 h-8 text-white rotating" />
+    <AppLayout>
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-8 md:p-12 text-white">
+          <div className="absolute top-0 right-0 p-8 opacity-20">
+            <Zap className="h-32 w-32 text-indigo-500 blur-xl animate-pulse" />
+          </div>
+          <div className="relative z-10 max-w-2xl space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 px-4 py-1.5 text-sm font-medium text-indigo-300 border border-indigo-500/30">
+              <Activity className="h-4 w-4" />
+              Engine Status: High Fidelity
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+              Operational <span className="text-indigo-400">Command Center</span>
+            </h1>
+            <p className="text-lg text-slate-400">
+              Your autonomous decision engine has analyzed 4,203 data points today.
+              2 critical interventions required to maintain projected margin.
+            </p>
+          </div>
+        </section>
+        {/* KPI Grid */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric, idx) => (
+            <motion.div
+              key={metric.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <MetricCard metric={metric} />
+            </motion.div>
+          ))}
+        </section>
+        {/* Main Dashboard Content */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Left: Charts & Performance */}
+          <div className="lg:col-span-8 space-y-8">
+            <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold">Sales Velocity & Projection</h2>
+                  <p className="text-sm text-muted-foreground">Historical vs AI Predicted Revenue</p>
+                </div>
+              </div>
+              <div className="h-[350px] w-full">
+                <SalesChart />
+              </div>
+            </section>
+          </div>
+          {/* Right: Action Feed */}
+          <div className="lg:col-span-4 space-y-8">
+            <section>
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  Decision Feed
+                  <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+                </h2>
+                <button className="text-xs text-indigo-600 font-medium hover:underline">View All</button>
+              </div>
+              <DecisionFeed />
+            </section>
           </div>
         </div>
-
-        <div className="space-y-3">
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-balance leading-tight">
-            Creating your <span className="text-gradient">app</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-pretty">
-            Your application would be ready soon.
-          </p>
-        </div>
-
-        {HAS_TEMPLATE_DEMO ? (
-          <div className="max-w-5xl mx-auto text-left">
-            <TemplateDemo />
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-center gap-4">
-              <Button
-                size="lg"
-                onClick={onPleaseWait}
-                className="btn-gradient px-8 py-4 text-lg font-semibold hover:-translate-y-0.5 transition-all duration-200"
-                aria-live="polite"
-              >
-                Please Wait
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <div>
-                Time elapsed:{' '}
-                <span className="font-medium tabular-nums text-foreground">{formatted}</span>
-              </div>
-              <div>
-                Coins:{' '}
-                <span className="font-medium tabular-nums text-foreground">{coins}</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center gap-2">
-              <Button variant="outline" size="sm" onClick={onReset}>
-                Reset
-              </Button>
-              <Button variant="outline" size="sm" onClick={onAddCoin}>
-                Add Coin
-              </Button>
-            </div>
-          </>
-        )}
       </div>
-
-      <footer className="absolute bottom-8 text-center text-muted-foreground/80">
-        <p>Powered by Cloudflare</p>
-      </footer>
-
-      <Toaster richColors closeButton />
-    </div>
-  )
+    </AppLayout>
+  );
 }
