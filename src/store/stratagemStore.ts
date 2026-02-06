@@ -175,4 +175,4 @@ export const useStratagemStore = create<StratagemState>((set, get) => ({
     });
     set({ metrics, decisions, salesHistory, inventory });
   }
-})));
+}))
