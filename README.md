@@ -1,6 +1,6 @@
 # Cloudflare AI Chat Agent
 
-[![Deploy to Cloudflare][cloudflarebutton]]
+[![Deploy to Cloudflare][![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/imISHANMALIK/stratagem-ai-agentic-e-commerce-decision-engine)]
 
 A production-ready, full-stack AI chat application built with Cloudflare Workers, Durable Objects, and Agents SDK. Features multi-session conversations, streaming responses, tool calling (weather, web search, MCP integration), and a modern React frontend with shadcn/ui.
 
@@ -95,7 +95,7 @@ Example frontend integration uses `src/lib/chat.ts` service.
 
 Or use the one-click deploy:
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/imISHANMALIK/stratagem-ai-agentic-e-commerce-decision-engine)
 
 **Custom Domain**: Update `wrangler.jsonc` with `route` patterns after deployment.
 
